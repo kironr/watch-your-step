@@ -1,0 +1,11 @@
+__pycache__/
+*.egg-info/
+.venv/
+# Personal data: never commit
+takeout/
+Takeout/
+evals/data/*.jsonl
+data/
+evals/cases/
+evals/results/
+interests.md

@@ -211,6 +211,61 @@ overfitting rules. `/claude-api build-eval` can audit these cases or add a secon
 would hint at past choices. `python -m evals.run --label notes --reps 3 --with-interests`
 measures what it adds.
 
+## Eval test run
+
+A real run on one person's history (November 18, 2026), following the steps above on Windows.
+
+### Discover
+
+`wys discover --top 15` searched 32 topics: 12 new searches, the other 20 reused from the
+cache, and none failed. It found 456 videos, 377 of them long-form and unwatched, and
+Claude ranked 60.
+
+<p align="center"><img src="docs/eval-test-run/1-discover-terminal.png" alt="wys discover terminal output with 15 ranked picks and reasons" width="900"></p>
+
+The same picks on the page `discover` writes (`data/discover.html`), top 8 and then all 15:
+
+<p align="center">
+  <img src="docs/eval-test-run/2-discover-page-top8.png" alt="discover.html, top 8 picks with thumbnails" width="560">
+  <img src="docs/eval-test-run/3-discover-page-all15.png" alt="discover.html, all 15 picks" width="330">
+</p>
+
+The top picks follow the note in `interests.md`: Claude Certified Architect exam prep and
+Claude Code first, then Strands and AgentCore, the AWS ML Engineer exam, Stanford lectures
+and RTX 50-series setup. With `--top 30 --reuse`, OpenRouter, Ollama, vLLM, Nsight and Tesla
+appear further down. Lower-priority interests show up there rather than in the top 15.
+
+### Eval data
+
+| Step | Result |
+|---|---|
+| Watch history | 29,140 watch events, of which 501 were deliberate long-form views (28,100 Shorts and 539 live streams removed) |
+| Decoy pool | 8,017 videos: uploads from watched channels, plus 2,226 from 15 Claude-written searches; 3,585 usable after filtering |
+| Cases | 55 (39 train / 16 test), one real watch per 10-video slate, 3-day windows. 4 dropped in review (`excluded.txt`): three hashtag-only feed clips and one party playlist |
+| Channel balance | 69% of real watches came from channels not seen before, and decoys were matched to that rate |
+
+### Baselines
+
+<p align="center"><img src="docs/eval-test-run/4-eval-runs.png" alt="evals.run output for random, novelty, channel_freq and Sonnet, plus evals.compare" width="860"></p>
+
+<p align="center"><img src="docs/eval-test-run/5-results-summary.png" alt="Results table: random 0.453, newest channel first 0.383, favourite channel first 0.454, Claude Sonnet 0.528, with interpretation" width="860"></p>
+
+`evals.compare random2 sonnet2` puts Claude's gain over random at +0.080 on train (95% CI
++0.007 to +0.158, entirely above zero) and +0.063 on test (CI −0.083 to +0.220; 16 cases are
+too few to confirm it alone), so the decision is `KEEP`.
+
+### Noise check
+
+Rerunning Sonnet with nothing changed (`try-1`) gave Δ 0.000 on train (CI ±0.005) and
++0.013 on test, and `compare` correctly returned `REVERT (no gain beyond noise)`.
+
+<p align="center"><img src="docs/eval-test-run/6-noise-check.png" alt="Interpretation: eval is stable, noise about 0.01, parse failures intermittent" width="860"></p>
+
+### Next
+
+Hillclimb against `sonnet2` as the baseline with `--min-delta 0.03`, judging mainly by the
+train CI and using test as a check that nothing regresses.
+
 ## Costs and token usage
 
 **Claude** is billed per token to your Anthropic account. Put the current prices for each
